@@ -11,7 +11,8 @@ using namespace std;
 
 struct {
 long priority;        //message priority
-int temp;            //temperature
+int prev_stat;
+int status;            //temperature
 int pid;               //process id
 int stable;          //boolean for temperature stability
 } msgp, cmbox;
@@ -41,6 +42,7 @@ int main(int argc, char *argv[]) {
    cmbox.priority = 1;
    cmbox.pid = uid;
    cmbox.stable = 1;
+   cmbox.prev_stat = 0;
 
    /* The length is essentially the size of 
        the structure minus sizeof(mtype) */
@@ -49,16 +51,16 @@ int main(int argc, char *argv[]) {
    //While all the processes have different temps
    while(1){
 
-      cin >> cmbox.temp;
-      //Send the current temp to the central server
+      cin >> cmbox.status;
+      //Send the current status to the central server
       result = msgsnd( msqidC, &cmbox, length, 0);
 
       //Wait for a new message from the central server
       result = msgrcv( msqid, &msgp, length, 1, 0);
       
-      cout << "[" << msgp.pid << "]" << msgp.temp;
+      cout << "[" << msgp.pid << "]" << msgp.status << " " << msgp.prev_stat;
 
-      if (msgp.stable == 0)
+      if (msgp.status != msgp.prev_stat && msgp.status == 18)
       {
          cout << " [OK]" << endl;
       }
@@ -67,7 +69,7 @@ int main(int argc, char *argv[]) {
          cout << " [NG]" << endl;
       }
 
-      //If the new message indicates all the processes have the same temp
+      //If the new message indicates all the processes have the same status
       //break the loop and print out the final temperature
    }
 

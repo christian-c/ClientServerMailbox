@@ -12,7 +12,8 @@ using namespace std;
 
 struct {
 long priority;         //message priority
-int temp;             //temperature
+int prev_stat;
+int status;             //temperature
 int pid;                //process id
 int stable;            //boolean for temperature stability
 } msgp, cmbox;
@@ -33,7 +34,7 @@ int main(int argc, char *argv[]) {
    int uid = 0;                               //central process ID
    int initTemp = atoi(argv[1]);        //starting temperature
    int msqid[NUM_PROCESSES];       //mailbox IDs for all processes
-   int unstable = 1;          //boolean to denote temp stability
+   int unstable = 1;          //boolean to denote status stability
    int tempAry[NUM_PROCESSES];   //array of process temperatures
 
    //Create the Central Servers Mailbox
@@ -50,7 +51,8 @@ int main(int argc, char *argv[]) {
    //Initialize the message to be sent
    msgp.priority = 1;
    msgp.pid = uid;
-   msgp.temp = initTemp;
+   msgp.status = initTemp;
+   msgp.prev_stat = 0;
 
    /* The length is essentially the size 
        of the structure minus sizeof(mtype) */
@@ -61,9 +63,9 @@ int main(int argc, char *argv[]) {
    while(1){
          result = msgrcv( msqidC, &cmbox, length, 1, 0);
 
-         cout << "[" << cmbox.pid << "]" << cmbox.temp << endl;
+         cout << "[" << cmbox.pid << "]" << cmbox.status << endl;
          
-         if (cmbox.temp == initTemp)
+         if (cmbox.status == initTemp)
          {
             msgp.stable = 0;
          }
@@ -72,8 +74,10 @@ int main(int argc, char *argv[]) {
             msgp.stable = 1;
          }
 
-         msgp.temp = cmbox.temp; 
+         msgp.status = cmbox.status; 
          result = msgsnd( msqid[0], &msgp, length, 0);
+
+         msgp.prev_stat = cmbox.status;
 
 
    }
