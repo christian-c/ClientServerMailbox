@@ -58,7 +58,7 @@ int main()
     msgpack::unpack(&snt_msg, rbuf.mtext, MSGSZ);
 
     msgpack::object obj = snt_msg.get();
-    cout << obj.map("Message") << endl;
+    cout << obj << endl;
 
     return 0;
 }
