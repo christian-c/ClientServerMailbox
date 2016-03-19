@@ -3,7 +3,7 @@ CC      = g++
 CFLAGS  = -Wall -Wformat -fpermissive -std=c++11 
 LDFLAGS = -lrt -lmsgpack
 
-all: server client
+all: server client msgpack_test
 
 server: server.o
 	$(CC) -o $@ $^ $(LDFLAGS)
@@ -16,6 +16,12 @@ client: client.o
 
 client.o: client.cpp
 	$(CC) -c $(CFLAGS) $<
+
+msgpack_test.o: msgpack_test.cpp
+	$(CC) -c $(CFLAGS) $<
+
+msgpack_test: msgpack_test.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 .PHONY: clean
 

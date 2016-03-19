@@ -67,13 +67,7 @@ int main()
     pk.pack(msg);
 
     sbuf.mtype = 1;
-    
-    cout << "msgget: msgget succeeded: msqid = " << msqid << "\n";
-    
     memcpy(sbuf.mtext, server_buf.str().data(), MSGSZ); 
-
-    cout << "msgget: msgget succeeded: msqid = " << msqid << "\n";
-    
     buf_length = strlen(sbuf.mtext) + 1 ;
 
     /*
@@ -86,13 +80,13 @@ int main()
     }
 
     else 
-      printf("Message: \"%s\" Sent\n", sbuf.mtext);
-      
-    msgpack::unpacked snt_msg;
-    msgpack::unpack(&snt_msg, sbuf.mtext, MSGSZ);
+    {
+        msgpack::unpacked snt_msg;
+        msgpack::unpack(&snt_msg, sbuf.mtext, MSGSZ);
 
-    msgpack::object obj = snt_msg.get();
-    cout << obj << endl;
-    
+        msgpack::object obj = snt_msg.get();
+        cout << "[MX05_00] " << obj << endl;
+    }
+      
     return 0;
 }

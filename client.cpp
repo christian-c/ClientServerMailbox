@@ -13,6 +13,8 @@ using namespace std;
 /*
  * Declare the message structure.
  */
+ 
+typedef std::map<std::string, msgpack::object> MapStrMsgPackObj;
 
 typedef struct msgbuffer {
     long    mtype;
@@ -59,8 +61,11 @@ int main()
     msgpack::unpack(&snt_msg, rbuf.mtext, MSGSZ);
 
     msgpack::object obj = snt_msg.get();
-    cout << obj << endl;
 
-    //std::cout << outputMap["Message"] << std::endl;
+    // deserialize it.
+    MapStrMsgPackObj mmap = obj.as<MapStrMsgPackObj>();
+
+    cout << mmap["Message"] << endl;
+
     return 0;
 }
