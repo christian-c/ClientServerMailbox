@@ -1,5 +1,6 @@
+C       = gcc
 CC      = g++
-CFLAGS  = -Wall
+CFLAGS  = -Wall -Wformat
 LDFLAGS = -lrt
 
 all: server client
@@ -7,13 +8,13 @@ all: server client
 server: server.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-server.o: server.cpp 
+server.o: server.cpp
 	$(CC) -c $(CFLAGS) $<
 
 client: client.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-client.o: client.cpp 
+client.o: client.cpp
 	$(CC) -c $(CFLAGS) $<
 
 .PHONY: clean
