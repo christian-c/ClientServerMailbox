@@ -8,6 +8,7 @@
 #include <msgpack.hpp>
 #define MSGSZ 256
 
+#define MSGPACK_USE_CPP03
 using namespace std;
 
 /*

@@ -53,6 +53,7 @@ int main()
         perror("msgrcv");
         return -1;
     }
+    msgpack::unpacker pac;
 
     msgpack::unpacked snt_msg;
     msgpack::unpack(&snt_msg, rbuf.mtext, MSGSZ);
@@ -60,5 +61,6 @@ int main()
     msgpack::object obj = snt_msg.get();
     cout << obj << endl;
 
+    //std::cout << outputMap["Message"] << std::endl;
     return 0;
 }

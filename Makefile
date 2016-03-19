@@ -1,7 +1,7 @@
 C       = gcc
 CC      = g++
-CFLAGS  = -Wall -Wformat -fpermissive
-LDFLAGS = -lrt
+CFLAGS  = -Wall -Wformat -fpermissive -std=c++11 
+LDFLAGS = -lrt -lmsgpack
 
 all: server client
 
