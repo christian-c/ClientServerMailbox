@@ -8,108 +8,152 @@
 #include <msgpack.hpp>
 
 #define MSGSZ 256
-#define CENTRAL_MAILBOX 12434    //Central Mailbox number 
-#define NUM_PROCESSES 1            //Total number of external processes
 #define ROBOT_DOF 12
+#define CENTRAL_MAILBOX 1121    //Central Mailbox number 
+#define NUM_PROCESSES 4            //Total number of external processes
 
 using namespace std;
 
+/*
+ * Declare the message structure.
+ */
+
 typedef struct msgbuffer {
-         long    mtype;
-         char    mtext[MSGSZ];
-         };
+    long    mtype;
+    char    mtext[MSGSZ];
+};
 
-//MAIN function
-int main(int argc, char *argv[]) {
+typedef std::map<std::string, msgpack::object> MapStrMsgPackObj;
 
-   msgbuffer msgp, cmbox;
 
-   if(argc != 2) {
+int main(int argc, char *argv[])
+{
+    msgbuffer sbuf, rbuf;
+    int uid;
+    int msqid, msqidC;
+    int msgflg = IPC_CREAT | 0666;
+    key_t key;
+    size_t buf_length;
+
+    if(argc != 2) {
       cout << "[ERROR] Too few arguments" << endl;
       cout << "[USAGE] ./client_start uid" << endl;
       return -1;
-   }
+    }
+    else
+    {
+        uid = atoi(argv[1]);
+        if (uid <= 0 || uid >= 4)
+        {
+            cout << "[ERROR] 1 <= UID <= 4" << endl;
+            return -1;
+        }
+    }
 
-   //Setup local variables
-   int result, length, status;
-   int uid = atoi(argv[1]);
+    key = CENTRAL_MAILBOX;
 
-   //Create the Central Servers Mailbox
-   int msqidC = msgget(CENTRAL_MAILBOX, 0666 | IPC_CREAT);
-   if (msqidC < 0)
-      return -1;
+    printf("\nLocating Server...\n");
 
-   //Create the mailbox for this process and store it's IDs
-   int msqid = msgget((CENTRAL_MAILBOX + uid), 0666 | IPC_CREAT);
-   if (msqid < 0)
-      return -1;
+    cout << "msgget: Calling msgget(" << key <<") " << endl;
 
-   cout << "[CMBOX ID]" << msqidC << endl;
-   cout << "[USER ID]" << msqid << endl;
+    if ((msqidC = msgget(key, msgflg )) < 0) {
+        perror("msgget");
+        return -1;
+    }
+    else 
+        cout << "msgget: msgget succeeded: msqid = " << msqidC << "\n";
 
-   //Initialize the message to be sent
-   msgp.mtype = 1;
-   string msg = "N/A";
-   vector <int> cur_servo_stt, pre_servo_stt;
+    printf("\nStarting Client...\n");
 
-   for (int i = 0; i < ROBOT_DOF; ++i)
-   {
-     pre_servo_stt.push_back(-1);
-     cur_servo_stt.push_back(-1);
-   }
+    if ((msqid = msgget(key + uid, msgflg )) < 0) {
+        perror("msgget");
+        cout << "\n";
+        return -1;
+    }
+    else 
+        cout << "msgget: msgget succeeded: msqid = " << msqid << "\n" << endl;
 
-   //while(1){
+    vector <int> cur_servo_stt, pre_servo_stt;
 
-      int cur_stat;
-      cout << "[MX05_" << msqid << "] > ";
-      cin >> cur_stat;
-   
-      for (int i = 0; i < ROBOT_DOF; ++i)
-      {
-        cur_servo_stt[i] = cur_stat;
-      }
+    for (int i = 0; i < ROBOT_DOF; ++i)
+    {
+        pre_servo_stt.push_back(-1);
+        cur_servo_stt.push_back(0);
+    }
 
-      stringstream ssbuffer;
-      msgpack::packer<stringstream> pk(&ssbuffer);
-      pk.pack_map(4);
-      pk.pack(string("ID"));
-      pk.pack(msqid);
-      pk.pack(string("PreviousStat"));
-      pk.pack(pre_servo_stt);
-      pk.pack(string("CurrentStat"));
-      pk.pack(cur_servo_stt);   
-      pk.pack(string("Message"));
-      pk.pack(msg);
+    while (1)
+    {
+        cout << "[MX05_" << msqid << "] > ";
+        int cur_stat;
+        cin >> cur_stat;
+        
+        for (int i = 0; i < ROBOT_DOF; ++i)
+        {
+            cur_servo_stt[i] = cur_stat;
+        }
 
-      memcpy(cmbox.mtext, ssbuffer.str().data(), MSGSZ); 
-      size_t buf_length = strlen(cmbox.mtext) + 1 ;
+        string msg = "N/A";
+        stringstream send_buf;
+        msgpack::packer<stringstream> pk(&send_buf);
+        pk.pack_map(4);
+        pk.pack(string("ID"));
+        pk.pack(msqid);
+        pk.pack(string("PreviousStat"));
+        pk.pack(pre_servo_stt);
+        pk.pack(string("CurrentStat"));
+        pk.pack(cur_servo_stt);   
+        pk.pack(string("Message"));
+        pk.pack(msg);
 
-      if (msgsnd(msqidC, &cmbox, MSGSZ + 1, IPC_NOWAIT) < 0) {
-         perror("msgsnd");
-         return -1;
-      }
 
-      else 
-      {
-         msgpack::unpacked snt_msg;
-         msgpack::unpack(&snt_msg, cmbox.mtext, MSGSZ);
+        sbuf.mtype = 1;
+        memcpy(sbuf.mtext, send_buf.str().data(), MSGSZ); 
+        buf_length = strlen(sbuf.mtext) + 1 ;
 
-         msgpack::object obj = snt_msg.get();
-         cout << "[MX05_" << msqidC << "] > " << obj << endl;
-      }
+        /*
+         * Send a message.
+         */
+        if (msgsnd(msqidC, &sbuf, MSGSZ + 1, IPC_NOWAIT) < 0) {
+            cout << "[MX05_" << msqid << "] > NG...\n" << endl;
+            perror("msgsnd");
+            return -1;
+        }
 
-      //Wait for a new message from the central server
-      //result = msgrcv( msqid, &msgp, length, 1, 0);
-      
-      //If the new message indicates all the processes have the same status
-      //break the loop and print out the final temperature
-   //}
+        else 
+        {
+            msgpack::unpacked snt_msg;
+            msgpack::unpack(&snt_msg, sbuf.mtext, MSGSZ);
 
-   //Remove the mailbox
-   status = msgctl(msqid, IPC_RMID, 0);
+            msgpack::object obj = snt_msg.get();
+            cout << "[MX05_" << msqid << "] > OK...\n" << endl;
+        }
 
-   //Validate nothing when wrong when trying to remove mailbox
-   if(status != 0){
-      printf("\nERROR closing mailbox\n");
-   }
+        for (int i = 0; i < ROBOT_DOF; ++i)
+        {
+            pre_servo_stt[i] = cur_servo_stt[i];
+        }
+
+        if (msgrcv(msqid, &rbuf, MSGSZ + 1, 1, 0) < 0) {
+            perror("msgrcv");
+            return -1;
+        }
+
+        msgpack::unpacked rcv_msg;
+        msgpack::unpack(&rcv_msg, rbuf.mtext, MSGSZ);
+
+        msgpack::object obj = rcv_msg.get();
+
+        // deserialize it.
+        MapStrMsgPackObj mmap = obj.as<MapStrMsgPackObj>();
+        
+        std::string recv_msg;
+        int sender;
+        mmap["ID"].convert(&sender);
+        mmap["Message"].convert(&recv_msg);
+
+        cout << "[MX05_" << sender << "] < " << recv_msg << "\n" << endl;
+
+    }
+
+    return 0;
 }

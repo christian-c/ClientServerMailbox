@@ -9,6 +9,8 @@
 
 #define MSGSZ 256
 #define ROBOT_DOF 12
+#define CENTRAL_MAILBOX 12434    //Central Mailbox number 
+#define NUM_PROCESSES 1            //Total number of external processes
 
 using namespace std;
 
@@ -60,6 +62,7 @@ int main()
 
     while (1)
     {
+        cout << "[MX05_" << msqid << "] > ";
         int cur_stat;
         cin >> cur_stat;
         
@@ -101,6 +104,11 @@ int main()
 
             msgpack::object obj = snt_msg.get();
             cout << "[MX05_" << msqid << "] > " << obj << endl;
+        }
+
+        for (int i = 0; i < ROBOT_DOF; ++i)
+        {
+            pre_servo_stt[i] = cur_servo_stt[i];
         }
     }
 

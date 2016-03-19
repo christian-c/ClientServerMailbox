@@ -9,6 +9,8 @@
 
 #define MSGSZ 256
 #define ROBOT_DOF 12
+#define CENTRAL_MAILBOX 12434    //Central Mailbox number 
+#define NUM_PROCESSES 4            //Total number of external processes
 
 using namespace std;
 
@@ -25,25 +27,38 @@ typedef std::map<std::string, msgpack::object> MapStrMsgPackObj;
 
 int main()
 {
-    int msqid;
+    int msqidC;
+    int msqid[NUM_PROCESSES];
     key_t key;
-    msgbuffer rbuf;
+    msgbuffer rbuf, sbuf;
 
-    /*
-     * Get the message queue id for the
-     * "name" 1234, which was created by
-     * the server.
-     */
-    key = 12434;
+    printf("\nStarting Server...\n");
 
-    if ((msqid = msgget(key, 0666)) < 0) {
+    key = CENTRAL_MAILBOX;
+
+    if ((msqidC = msgget(key, 0666 | IPC_CREAT)) < 0) {
+        cout << "[MX05_" << msqidC << "] NG..." << endl;
         perror("msgget");
         return -1;
     }
     else
     {
-        cout << "[CMBOX ID]" << msqid << endl;       
+        cout << "[MX05_" << msqidC << "] OK..." << endl;   
     }
+
+    printf("\nSetting up the mailbox...\n");  
+    //Create the mailboxes for the other processes and store their IDs
+
+    for(int i = 1; i <= NUM_PROCESSES; i++){
+      msqid[i-1] = msgget((CENTRAL_MAILBOX + i), 0666 | IPC_CREAT);
+      if (msqid[(i-1)] < 0) {
+         cout << "[MX05_" << msqid[i-1] << "] NG..." << endl;
+         return -1;
+      }
+      else
+         cout << "[MX05_" << msqid[i-1] << "] OK..." << endl;
+    }
+    cout << "\n";
 
     while (1)
     
@@ -51,7 +66,7 @@ int main()
         /*
          * Receive an answer of message type 1.
          */
-        if (msgrcv(msqid, &rbuf, MSGSZ + 1, 1, 0) < 0) {
+        if (msgrcv(msqidC, &rbuf, MSGSZ + 1, 1, 0) < 0) {
             perror("msgrcv");
             return -1;
         }
@@ -71,10 +86,12 @@ int main()
         mmap["Message"].convert(&recv_msg);
 
 
-        cout <<  "[MX05_00] Servo_Stat[-1] : " << prev_stat[0] << endl; 
-        cout <<  "          Servo_Stat[ 0] : " << cur_stat[0] << endl; 
-        cout <<  "          Message : " << recv_msg << endl;
-    }
+        cout << "[MX05_" << mmap["ID"] << "] > Servo_Stat[-1] : " << prev_stat[0] << endl; 
+        cout <<  "                Servo_Stat[ 0] : " << cur_stat[0] << endl; 
+        cout <<  "                Message : " << recv_msg << "\n" << endl;
     
+
+    }
+
     return 0;
 }
