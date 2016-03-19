@@ -6,9 +6,10 @@
 #include <iostream>
 #include <sstream>
 #include <msgpack.hpp>
-#define MSGSZ 256
 
-#define MSGPACK_USE_CPP03
+#define MSGSZ 256
+#define ROBOT_DOF 12
+
 using namespace std;
 
 /*
@@ -20,15 +21,6 @@ typedef struct msgbuffer {
          char    mtext[MSGSZ];
          };
 
-std::string hexStr(unsigned char* data, int len)
-{
-    std::stringstream ss;
-    ss << std::hex;
-    for(int i=0;i<len;++i)
-        ss << std::setw(2) << std::setfill('0') << (int)data[i];
-    return ss.str();
-}
-
 int main()
 {
     msgbuffer sbuf;
@@ -39,9 +31,10 @@ int main()
 
     /*
      * Get the message queue id for the
-     * "name" 1234, which was created by
+     * "name", which was created by
      * the server.
      */
+
     key = 12434;
 
     cout << "\nmsgget: Calling msgget(" << key <<") " << endl;
@@ -56,13 +49,25 @@ int main()
     /*
      * We'll send message type 1
      */
-    
+
+    vector <int> cur_servo_stt, pre_servo_stt;
+
+    for (int i = 0; i < ROBOT_DOF; ++i)
+    {
+        pre_servo_stt.push_back(-1);
+        cur_servo_stt.push_back(0);
+    }
+
     string msg = "Did you get this?";
     stringstream server_buf;
     msgpack::packer<stringstream> pk(&server_buf);
-    pk.pack_map(2);
+    pk.pack_map(4);
     pk.pack(string("ID"));
     pk.pack(msqid);
+    pk.pack(string("PreviousStat"));
+    pk.pack(pre_servo_stt);
+    pk.pack(string("CurrentStat"));
+    pk.pack(cur_servo_stt);   
     pk.pack(string("Message"));
     pk.pack(msg);
 

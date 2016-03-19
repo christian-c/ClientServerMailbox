@@ -6,7 +6,9 @@
 #include <iostream>
 #include <sstream>
 #include <msgpack.hpp>
+
 #define MSGSZ 256
+#define ROBOT_DOF 12
 
 using namespace std;
 
@@ -14,21 +16,12 @@ using namespace std;
  * Declare the message structure.
  */
 
-typedef std::map<std::string, msgpack::object> MapStrMsgPackObj;
-
 typedef struct msgbuffer {
     long    mtype;
     char    mtext[MSGSZ];
 };
 
-std::string hexStr(unsigned char* data, int len)
-{
-    std::stringstream ss;
-    ss << std::hex;
-    for(int i=0;i<len;++i)
-        ss << std::setw(2) << std::setfill('0') << (int)data[i];
-    return ss.str();
-}
+typedef std::map<std::string, msgpack::object> MapStrMsgPackObj;
 
 int main()
 {
@@ -64,8 +57,17 @@ int main()
 
     // deserialize it.
     MapStrMsgPackObj mmap = obj.as<MapStrMsgPackObj>();
+    
+    std::string recv_msg;
+    vector <int> prev_stat, cur_stat;
+    mmap["PreviousStat"].convert(&prev_stat);
+    mmap["CurrentStat"].convert(&cur_stat);
+    mmap["Message"].convert(&recv_msg);
 
-    cout <<  "[MX05_00] " << mmap["Message"] << endl;
+
+    cout <<  "[MX05_00] Servo_Stat[-1][0] " << prev_stat[0] << endl; 
+    cout <<  "[MX05_00] Servo_Stat[ 0][0] " << cur_stat[0] << endl; 
+    cout <<  "[MX05_00] " << recv_msg << endl;
 
     return 0;
 }
