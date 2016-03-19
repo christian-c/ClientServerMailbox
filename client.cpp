@@ -13,7 +13,7 @@ using namespace std;
 /*
  * Declare the message structure.
  */
- 
+
 typedef std::map<std::string, msgpack::object> MapStrMsgPackObj;
 
 typedef struct msgbuffer {
@@ -65,7 +65,7 @@ int main()
     // deserialize it.
     MapStrMsgPackObj mmap = obj.as<MapStrMsgPackObj>();
 
-    cout << mmap["Message"] << endl;
+    cout <<  "[MX05_00] " << mmap["Message"] << endl;
 
     return 0;
 }
