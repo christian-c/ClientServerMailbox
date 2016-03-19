@@ -65,9 +65,9 @@ int main()
     mmap["Message"].convert(&recv_msg);
 
 
-    cout <<  "[MX05_00] Servo_Stat[-1][0] " << prev_stat[0] << endl; 
-    cout <<  "[MX05_00] Servo_Stat[ 0][0] " << cur_stat[0] << endl; 
-    cout <<  "[MX05_00] " << recv_msg << endl;
+    cout <<  "[MX05_00] Servo_Stat[-1] : " << prev_stat[0] << endl; 
+    cout <<  "          Servo_Stat[ 0] : " << cur_stat[0] << endl; 
+    cout <<  "          Message : " << recv_msg << endl;
 
     return 0;
 }

@@ -58,7 +58,7 @@ int main()
         cur_servo_stt.push_back(0);
     }
 
-    string msg = "Did you get this?";
+    string msg = "N/A";
     stringstream server_buf;
     msgpack::packer<stringstream> pk(&server_buf);
     pk.pack_map(4);
