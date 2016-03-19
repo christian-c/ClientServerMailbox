@@ -1,6 +1,6 @@
 C       = gcc
 CC      = g++
-CFLAGS  = -Wall -Wformat
+CFLAGS  = -Wall -Wformat -fpermissive
 LDFLAGS = -lrt
 
 all: server client

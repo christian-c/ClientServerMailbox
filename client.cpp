@@ -2,6 +2,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <stdio.h>
+#include <string.h>
 #include <iostream>
 #include <sstream>
 #include <msgpack.hpp>
@@ -18,8 +19,16 @@ typedef struct msgbuffer {
     char    mtext[MSGSZ];
 };
 
+std::string hexStr(unsigned char* data, int len)
+{
+    std::stringstream ss;
+    ss << std::hex;
+    for(int i=0;i<len;++i)
+        ss << std::setw(2) << std::setfill('0') << (int)data[i];
+    return ss.str();
+}
 
-main()
+int main()
 {
     int msqid;
     key_t key;
@@ -30,25 +39,26 @@ main()
      * "name" 1234, which was created by
      * the server.
      */
-    key = 1234;
+    key = 12434;
 
     if ((msqid = msgget(key, 0666)) < 0) {
         perror("msgget");
         return -1;
     }
 
-    
     /*
      * Receive an answer of message type 1.
      */
-    if (msgrcv(msqid, &rbuf, MSGSZ, 1, 0) < 0) {
+    if (msgrcv(msqid, &rbuf, MSGSZ + 1, 1, 0) < 0) {
         perror("msgrcv");
         return -1;
     }
 
-    /*
-     * Print the answer.
-     */
-    printf("%s\n", rbuf.mtext);
+    msgpack::unpacked snt_msg;
+    msgpack::unpack(&snt_msg, rbuf.mtext, MSGSZ);
+
+    msgpack::object obj = snt_msg.get();
+    cout << obj.map("Message") << endl;
+
     return 0;
 }
